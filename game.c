@@ -1,0 +1,298 @@
+#include"s3c24xx.h"
+#include"GPIO.h"
+#include"framebuffer.h"
+#include"interrupt.h"
+int hit=0,score=20,exit=2,hole,usetime=0;
+int random_hole[25]={1,3,2,3,1,2,2,2,1,3,2,1,1,2,3,1,2,3,1,1,1,3,2,3,1};//随机洞口矩阵
+int random_wolf[25]={0,1,1,1,0,1,0,1,1,0,0,1,0,1,0,1,1,0,0,1,0,1,1,1,0};//随机狼矩阵
+extern int windowstate;
+extern const char p1[],p1h1[],p1h3[],p1h5[],p1h7[],p1s1[],p1s3[],p1s5[],p1s7[],win[],lossshow[],p2[],p2h1[],p2h3[],p2h5[],p2h7[],p2s1[],p2s3[],p2s5[],p2s7[],p3[],p3h1[],p3h3[],p3h5[],p3h7[],p3s1[],p3s3[],p3s5[],p3s7[],gtop[];
+//导入图片
+void wait()
+{
+    volatile unsigned int i=0;
+    for(i;i<220000;i++);
+}
+void score_add()
+{
+    score+=10;
+    judge_num(score);
+}
+void score_des()
+{
+    score-=10;
+    judge_num(score);
+}
+void wolfup(int hole)
+{
+    switch(hole)
+    {
+        case 1://灰太狼出现在洞口一
+        {
+            hole1(p1);//空状态
+            LEDs_ON();
+            wait();
+            LEDs_OFF();//LED灯闪烁
+            hole1(p1h1);//状态一
+            LEDs_ON();
+            wait();
+            LEDs_OFF();
+            hole1(p1h3);//状态二
+            LEDs_ON();
+            wait();
+            LEDs_OFF();
+            hole1(p1h5);//状态三———完全出现
+            hit=0;//清空击打位置，在状态三出现前的击打一律无效
+            LEDs_ON();
+            wait();
+            if(hit)
+            {
+                score_add();//击打中灰太狼，+10分
+                hole1(p1h7);//状态四————被击中
+            }
+            else
+                score_des();//没击中，-10分
+            hit=0;//清空击打位置
+            LEDs_OFF();
+            hole1(p1);//恢复空状态
+            break;
+        }
+        case 2://灰太狼出现在洞口2
+        {
+            hole2(p2);
+            LEDs_ON();
+            wait();
+            LEDs_OFF();
+            hole2(p2h1);
+            LEDs_ON();
+            wait();
+            LEDs_OFF();
+            hole2(p2h3);
+            LEDs_ON();
+            wait();
+            LEDs_OFF();
+            hole2(p2h5);
+            hit=0;
+            LEDs_ON();
+            wait();
+            if(hit)
+            {
+                score_add();
+                hole2(p2h7);
+            }
+            else
+                score_des();
+            hit=0;
+            LEDs_OFF();
+            hole2(p2);
+            break;
+        }
+        case 3:
+        {
+            hole3(p3);
+            LEDs_ON();
+            wait();
+            LEDs_OFF();
+            hole3(p3h1);
+            LEDs_ON();
+            wait();
+            LEDs_OFF();
+            hole3(p3h3);
+            LEDs_ON();
+            wait();
+            LEDs_OFF();
+            hole3(p3h5);
+            hit=0;
+            LEDs_ON();
+            wait();
+            if(hit)
+            {
+                score_add();
+                hole3(p3h7);
+            }
+            else
+                score_des();
+            LEDs_OFF();
+            hit=0;
+            hole3(p3);
+            break;
+        }
+    }
+}
+void friendup(int hole)
+{
+    switch(hole)
+    {
+        case 1://小灰灰出现在洞口1
+        {
+            hole1(p1);//空状态
+            LEDs_ON();
+            wait();
+            LEDs_OFF();//LED灯闪烁
+            hole1(p1s1);//状态一
+            LEDs_ON();
+            wait();
+            LEDs_OFF();
+            hole1(p1s3);//状态二
+            LEDs_ON();
+            wait();
+            LEDs_OFF();
+            hole1(p1s5);//状态三
+            hit=0;//清空击打标志位
+            LEDs_ON();
+            wait();
+            if(hit)
+            {
+                score_des();//击中小灰灰，-10分
+                hole1(p1s7);//状态四——被击打
+            }
+            else
+                score_add();//没有击中小灰灰，+10分
+            hit=0;//清空击打标志位
+            LEDs_OFF();
+            hole1(p1);//空状态
+            break;
+        }
+        case 2://小灰灰出现在洞口2
+        {
+            hole2(p2);
+            LEDs_ON();
+            wait();
+            LEDs_OFF();
+            hole2(p2s1);
+            LEDs_ON();
+            wait();
+            LEDs_OFF();
+            hole2(p2s3);
+            LEDs_ON();
+            wait();
+            LEDs_OFF();
+            hole2(p2s5);
+            hit=0;
+            LEDs_ON();
+            wait();
+            if(hit)
+            {
+                score_des();
+                hole2(p2s7);
+            }
+            else
+                score_add();
+            hit=0;
+            LEDs_OFF();
+            hole2(p2);
+            break;
+        }
+        case 3:
+        {
+            hole3(p3);
+            LEDs_ON();
+            wait();
+            LEDs_OFF();
+            hole3(p3s1);
+            LEDs_ON();
+            wait();
+            LEDs_OFF();
+            hole3(p3s3);
+            LEDs_ON();
+            wait();
+            LEDs_OFF();
+            hole3(p3s5);
+            hit=0;
+            LEDs_ON();
+            wait();
+            if(hit)
+            {
+                score_des();
+                hole3(p3s7);
+            }
+            else
+                score_add();
+            hit=0;
+            LEDs_OFF();
+            hole3(p3);
+            break;
+        }
+    }
+}
+
+void exit_wait()
+{
+    LEDs_ON();
+    wait();
+    LEDs_OFF();
+    LEDs_ON();
+    wait();
+    LEDs_OFF();
+    LEDs_ON();
+    wait();
+    LEDs_OFF();
+}
+void game()
+{
+    TIM0_Init();//定时器初始化
+    int wolf,ranum=0;//狼、随机数
+    score=20;//初始分数
+    usetime=0;//用时
+    TIM0_STart();//开定时器
+    exit=2;//退出确认标识位  //
+    
+    while(score!=0&&score!=100&&exit&&usetime<40)//退出条件
+    {
+        exit=2;
+        hole=random_hole[ranum%25];
+        wolf=random_wolf[ranum%25];//随机化狼以及出现洞口
+        switch(hole)
+        {
+            case 1:
+            {
+                if(wolf)
+                {
+                    wolfup(1);//狼出现
+                }
+                else
+                    friendup(1);//小灰灰出现
+                break;
+            }
+            case 2:
+            {
+                if(wolf)
+                {
+                    wolfup(2);
+                }
+                else
+                    friendup(2);
+                break;
+            }
+            case 3:
+            {
+                if(wolf)
+                {
+                    wolfup(3);
+                }
+                else
+                    friendup(3);
+                break;
+            }
+            default:
+                break;
+        }
+        ranum++;//改变随机数
+    }
+    TIM0_Stop();//关闭定时器
+    show_top(gtop);//清空计数条
+    if(score==0||exit==0||usetime>=40)//失败
+    {
+        res_show(lossshow);
+        wait();
+        wait();
+    }
+    else
+    {
+        res_show(win);//胜利
+        wait();
+        wait();
+    }
+    windowstate=0;//返回个人信息页面
+    usetime=0;//重置用时
+}
